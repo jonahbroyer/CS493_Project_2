@@ -141,7 +141,7 @@ router.put('/:businessid', async (req, res, next) => {
       if (updateSuccessful) {
         res.status(200).send({
           links: {
-            business: `/businesses/${buesinessid}`
+            business: `/businesses/${businessid}`
           }
         });
       } else {
