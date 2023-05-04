@@ -59,17 +59,16 @@ async function insertNewBusiness(business) {
 /*
  * Route to create a new business.
  */
-router.post('/', function (req, res, next) {
+router.post('/', async (req, res, next) => {
   if (validateAgainstSchema(req.body, businessSchema)) {
-    const business = extractValidFields(req.body, businessSchema);
-    business.id = businesses.length;
-    businesses.push(business);
-    res.status(201).json({
-      id: business.id,
-      links: {
-        business: `/businesses/${business.id}`
-      }
-    });
+    try {
+      const id = await insertNewBusiness(req.body);
+      res.status(201).send({ id: id, links: {business: `/businesses/${id}`} });
+    } catch (err) {
+      res.status(500).send({
+        error: "Error inserting business into DB."
+      });
+    }
   } else {
     res.status(400).json({
       error: "Request body is not a valid business object"
