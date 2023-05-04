@@ -5,6 +5,7 @@ const businesses = require('../data/businesses');
 const { reviews } = require('./reviews');
 const { photos } = require('./photos');
 
+import { application } from "express";
 import {getResourceCount, getResourcePage} from "./lib/mysqlquery.js"
 
 exports.router = router;
@@ -30,51 +31,16 @@ const businessSchema = {
 /*
  * Route to return a list of businesses.
  */
-router.get('/', function (req, res) {
-
-  /*
-   * Compute page number based on optional query string parameter `page`.
-   * Make sure page is within allowed bounds.
-   */
-  let page = parseInt(req.query.page) || 1;
-  const numPerPage = 10;
-  const lastPage = Math.ceil(businesses.length / numPerPage);
-  page = page > lastPage ? lastPage : page;
-  page = page < 1 ? 1 : page;
-
-  /*
-   * Calculate starting and ending indices of businesses on requested page and
-   * slice out the corresponsing sub-array of busibesses.
-   */
-  const start = (page - 1) * numPerPage;
-  const end = start + numPerPage;
-  const pageBusinesses = businesses.slice(start, end);
-
-  /*
-   * Generate HATEOAS links for surrounding pages.
-   */
-  const links = {};
-  if (page < lastPage) {
-    links.nextPage = `/businesses?page=${page + 1}`;
-    links.lastPage = `/businesses?page=${lastPage}`;
+router.get('/', async (req, res) => {
+  const count = getResourceCount(businesses);
+  try {
+    const businessesPage = await getResourcePage(parseInt(req.query.page) || 1, businesses);
+    res.status(200).send(businessesPage);
+  } catch (err) {
+    res.status(500).json({
+      error: "Error fetching lodgings list. Try again later."
+    });
   }
-  if (page > 1) {
-    links.prevPage = `/businesses?page=${page - 1}`;
-    links.firstPage = '/businesses?page=1';
-  }
-
-  /*
-   * Construct and send response.
-   */
-  res.status(200).json({
-    businesses: pageBusinesses,
-    pageNumber: page,
-    totalPages: lastPage,
-    pageSize: numPerPage,
-    totalCount: businesses.length,
-    links: links
-  });
-
 });
 
 /*
