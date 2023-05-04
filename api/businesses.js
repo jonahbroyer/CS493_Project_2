@@ -5,6 +5,8 @@ const businesses = require('../data/businesses');
 const { reviews } = require('./reviews');
 const { photos } = require('./photos');
 
+import {getResourceCount, getResourcePage} from "./lib/mysqlquery.js"
+
 exports.router = router;
 exports.businesses = businesses;
 
