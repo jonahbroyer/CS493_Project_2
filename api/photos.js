@@ -115,17 +115,32 @@ router.put('/:photoID', async (req, res, next) => {
       error: "Request body does not contain a valid photo."
     });
   }
-}); 
+});
+
+async function deletePhotoById(photoID) {
+  const [ result ] = await mysqlPool.query(
+    'DELETE FROM photos WHERE id = ?',
+    [ photoID ]
+  );
+  return result.affectedRows > 0;
+}
 
 /*
  * Route to delete a photo.
  */
-router.delete('/:photoID', function (req, res, next) {
-  const photoID = parseInt(req.params.photoID);
-  if (photos[photoID]) {
-    photos[photoID] = null;
-    res.status(204).end();
-  } else {
-    next();
+router.delete('/:photoID', async (req, res, next) => {
+  try {
+    const deleteSuccessful = await
+        deletePhotoById(parseInt(req.params.id));
+
+    if (deleteSuccessful) {
+            res.status(204).end();
+    } else {
+        next();
+    }
+} catch (err) {
+    res.status(500).send({
+        error: "Unable to delete photo."
+    });
   }
 });
