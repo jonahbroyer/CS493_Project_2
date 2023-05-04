@@ -17,40 +17,31 @@ const reviewSchema = {
   review: { required: false }
 };
 
+async function insertNewReview(review) {
+  const validatedReview = extractValidFields(
+    review,
+    reviewSchema
+  );
+  const [ result ] = await mysqlPool.query(
+    'INSERT INTO reviews SET ?',
+    validatedReview
+  );
+  return result.insertId;
+}
 
 /*
  * Route to create a new review.
  */
-router.post('/', function (req, res, next) {
+router.post('/', async (req, res, next) => {
   if (validateAgainstSchema(req.body, reviewSchema)) {
-
-    const review = extractValidFields(req.body, reviewSchema);
-
-    /*
-     * Make sure the user is not trying to review the same business twice.
-     */
-    const userReviewedThisBusinessAlready = reviews.some(
-      existingReview => existingReview
-        && existingReview.ownerid === review.ownerid
-        && existingReview.businessid === review.businessid
-    );
-
-    if (userReviewedThisBusinessAlready) {
-      res.status(403).json({
-        error: "User has already posted a review of this business"
-      });
-    } else {
-      review.id = reviews.length;
-      reviews.push(review);
-      res.status(201).json({
-        id: review.id,
-        links: {
-          review: `/reviews/${review.id}`,
-          business: `/businesses/${review.businessid}`
-        }
-      });
+    try {
+      const id = await insertNewReview(req.body);
+      res.status(201).send({ id: id, links: {review: `/reviews/${id}`, business: `/businesses/${id}`} });
+    } catch (err) {
+      res.status(500).send({
+        error: "Error inserting review into DB."
+      })
     }
-
   } else {
     res.status(400).json({
       error: "Request body is not a valid review object"
