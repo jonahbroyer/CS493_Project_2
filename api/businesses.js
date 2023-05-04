@@ -7,6 +7,7 @@ const { photos } = require('./photos');
 
 import { application } from "express";
 import {getResourceCount, getResourcePage} from "./lib/mysqlquery.js"
+import mysqlPool from "../lib/mysqlpool.js";
 
 exports.router = router;
 exports.businesses = businesses;
@@ -42,6 +43,18 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
+async function insertNewBusiness(business) {
+  const validatedBusiness = extractValidFields(
+    business,
+    businessSchema
+  );
+  const [ result ] = await mysqlPool.query(
+    'INSERT INTO businesses SET ?',
+    validatedBusiness
+  );
+  return result.insertId;
+}
 
 /*
  * Route to create a new business.
