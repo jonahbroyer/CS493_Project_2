@@ -49,15 +49,30 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+async function getReviewsById(reviewID) {
+  const [ results ] = await mysqlPool.query(
+    'SELECT * FROM reviews WHERE id = ?',
+    [ reviewID ],
+  );
+  return results[0];
+}
+
 /*
  * Route to fetch info about a specific review.
  */
-router.get('/:reviewID', function (req, res, next) {
-  const reviewID = parseInt(req.params.reviewID);
-  if (reviews[reviewID]) {
-    res.status(200).json(reviews[reviewID]);
-  } else {
-    next();
+router.get('/:reviewID', async (req, res, next) => {
+  try {
+    const review = await
+    getReviewsById(parseInt(req.params.id));
+    if (review) {
+      res.status(200).send(review);
+    } else {
+      next();
+    }
+  } catch (err) {
+    res.status(500).send({
+      error: "Unable to fetch review."
+    });
   }
 });
 
