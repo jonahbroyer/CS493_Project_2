@@ -144,3 +144,11 @@ router.delete('/:photoID', async (req, res, next) => {
     });
   }
 });
+
+async function getPhotosByUserId(userid) {
+  const [ results ] = await mysqlPool.query(
+    'SELECT * FROM photos WHERE userid = ?',
+    [ userid ],
+  );
+  return results[0];
+}
