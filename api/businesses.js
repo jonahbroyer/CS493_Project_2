@@ -186,3 +186,11 @@ router.delete('/:businessid', async (req, res, next) => {
     });
   }
 });
+
+async function getBusinessesByUserId(userid) {
+  const [ results ] = await mysqlPool.query(
+    'SELECT * FROM businesses WHERE userid = ?',
+    [ userid ],
+  );
+  return results[0];
+}
