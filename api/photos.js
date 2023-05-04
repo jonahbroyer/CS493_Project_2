@@ -76,44 +76,46 @@ router.get('/:photoID', async (req, res, next) => {
   }
 });
 
+async function updatePhotoById(photoID, photo) {
+  const validatedPhoto = extractValidFields(
+    photo,
+    photoSchema
+  );
+  const [ result ] = await mysqlPool.query(
+    'UPDATE photos SET ? WHERE id = ?',
+    [ validatedPhoto, photoID ]
+  );
+  return result.affectedRows > 0;
+}
+
 /*
  * Route to update a photo.
  */
-router.put('/:photoID', function (req, res, next) {
-  const photoID = parseInt(req.params.photoID);
-  if (photos[photoID]) {
-
-    if (validateAgainstSchema(req.body, photoSchema)) {
-      /*
-       * Make sure the updated photo has the same businessid and userid as
-       * the existing photo.
-       */
-      const updatedPhoto = extractValidFields(req.body, photoSchema);
-      const existingPhoto = photos[photoID];
-      if (existingPhoto && updatedPhoto.businessid === existingPhoto.businessid && updatedPhoto.userid === existingPhoto.userid) {
-        photos[photoID] = updatedPhoto;
-        photos[photoID].id = photoID;
-        res.status(200).json({
+router.put('/:photoID', async (req, res, next) => {
+  if (validateAgainstSchema(req.body, photoSchema)) {
+    try {
+      const updateSuccessful = await
+        updatePhotoById(parseInt(req.params.id), req.body);
+      if (updateSuccessful) {
+        res.status(200).send({
           links: {
-            photo: `/photos/${photoID}`,
-            business: `/businesses/${updatedPhoto.businessid}`
+            photo: `/photos/${photoID}`
           }
         });
       } else {
-        res.status(403).json({
-          error: "Updated photo cannot modify businessid or userid"
-        });
+        next();
       }
-    } else {
-      res.status(400).json({
-        error: "Request body is not a valid photo object"
+    } catch (err) {
+      res.status(500).send({
+        error: "Unable to update photo."
       });
     }
-
   } else {
-    next();
+    res.status(400).json({
+      error: "Request body does not contain a valid photo."
+    });
   }
-});
+}); 
 
 /*
  * Route to delete a photo.
