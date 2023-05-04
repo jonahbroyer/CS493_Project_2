@@ -76,26 +76,46 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+async function getBusinessesById(businessid) {
+  const [ results ] = await mysqlPool.query(
+    'SELECT * FROM businesses WHERE id = ?',
+    [ businessid ],
+  );
+  return results[0];
+}
+
 /*
  * Route to fetch info about a specific business.
  */
-router.get('/:businessid', function (req, res, next) {
-  const businessid = parseInt(req.params.businessid);
-  if (businesses[businessid]) {
-    /*
-     * Find all reviews and photos for the specified business and create a
-     * new object containing all of the business data, including reviews and
-     * photos.
-     */
-    const business = {
-      reviews: reviews.filter(review => review && review.businessid === businessid),
-      photos: photos.filter(photo => photo && photo.businessid === businessid)
-    };
-    Object.assign(business, businesses[businessid]);
-    res.status(200).json(business);
-  } else {
-    next();
+router.get('/:businessid', async (req, res, next) => {
+  try {
+    const business = await
+    getBusinessesById(parseInt(req.params.id));
+    if (business) {
+      res.status(200).send(business);
+    } else {
+      next();
+    }
+  } catch (err) {
+    res.status(500).send({
+      error: "Unable to fetch business."
+    });
   }
+  // if (businesses[businessid]) {
+  //   /*
+  //    * Find all reviews and photos for the specified business and create a
+  //    * new object containing all of the business data, including reviews and
+  //    * photos.
+  //    */
+  //   const business = {
+  //     reviews: reviews.filter(review => review && review.businessid === businessid),
+  //     photos: photos.filter(photo => photo && photo.businessid === businessid)
+  //   };
+  //   Object.assign(business, businesses[businessid]);
+  //   res.status(200).json(business);
+  // } else {
+  //   next();
+  // }
 });
 
 /*
