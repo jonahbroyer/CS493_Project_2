@@ -118,29 +118,44 @@ router.get('/:businessid', async (req, res, next) => {
   // }
 });
 
+async function updateBusinessById(businessid, business) {
+  const validatedBusiness = extractValidFields(
+    business,
+    businessSchema
+  );
+  const [ result ] = await mysqlPool.query(
+    'UPDATE businesses SET ? WHERE id = ?',
+    [ validatedBusiness, businessid ]
+  );
+  return result.affectedRows > 0;
+}
+
 /*
  * Route to replace data for a business.
  */
-router.put('/:businessid', function (req, res, next) {
-  const businessid = parseInt(req.params.businessid);
-  if (businesses[businessid]) {
-
-    if (validateAgainstSchema(req.body, businessSchema)) {
-      businesses[businessid] = extractValidFields(req.body, businessSchema);
-      businesses[businessid].id = businessid;
-      res.status(200).json({
-        links: {
-          business: `/businesses/${businessid}`
-        }
-      });
-    } else {
-      res.status(400).json({
-        error: "Request body is not a valid business object"
+router.put('/:businessid', async (req, res, next) => {
+  if (validateAgainstSchema(req.body, businessSchema)) {
+    try {
+      const updateSuccessful = await
+        updateBusinessById(parseInt(req.params.id), req.body);
+      if (updateSuccessful) {
+        res.status(200).send({
+          links: {
+            business: `/businesses/${buesinessid}`
+          }
+        });
+      } else {
+        next();
+      }
+    } catch (err) {
+      res.status(500).send({
+        error: "Unable to update business."
       });
     }
-
   } else {
-    next();
+    res.status(400).json({
+      error: "Request body does not contain a valid business."
+    });
   }
 });
 
