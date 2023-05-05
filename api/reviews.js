@@ -117,15 +117,30 @@ router.put('/:reviewID', async (req, res, next) => {
   }
 });
 
+async function deleteReviewById(reviewID) {
+  const [ result ] = await mysqlPool.query(
+    'DELETE FROM reviews WHERE id = ?',
+    [ reviewID ]
+  );
+  return result.affectedRows > 0;
+}
+
 /*
  * Route to delete a review.
  */
-router.delete('/:reviewID', function (req, res, next) {
-  const reviewID = parseInt(req.params.reviewID);
-  if (reviews[reviewID]) {
-    reviews[reviewID] = null;
-    res.status(204).end();
-  } else {
-    next();
+router.delete('/:reviewID', async (req, res, next) => {
+  try {
+    const deleteSuccessful = await
+        deleteReviewById(parseInt(req.params.id));
+
+    if (deleteSuccessful) {
+            res.status(204).end();
+    } else {
+        next();
+    }
+} catch (err) {
+    res.status(500).send({
+        error: "Unable to delete review."
+    });
   }
 });
