@@ -76,42 +76,44 @@ router.get('/:reviewID', async (req, res, next) => {
   }
 });
 
+async function updateReviewById(reviewID, review) {
+  const validatedReview = extractValidFields(
+    review,
+    reviewSchema
+  );
+  const [ result ] = await mysqlPool.query(
+    'UPDATE reviews SET ? WHERE id = ?',
+    [ validatedReview, reviewID ]
+  );
+  return result.affectedRows > 0;
+}
+
 /*
  * Route to update a review.
  */
-router.put('/:reviewID', function (req, res, next) {
-  const reviewID = parseInt(req.params.reviewID);
-  if (reviews[reviewID]) {
-
-    if (validateAgainstSchema(req.body, reviewSchema)) {
-      /*
-       * Make sure the updated review has the same businessid and userid as
-       * the existing review.
-       */
-      let updatedReview = extractValidFields(req.body, reviewSchema);
-      let existingReview = reviews[reviewID];
-      if (updatedReview.businessid === existingReview.businessid && updatedReview.userid === existingReview.userid) {
-        reviews[reviewID] = updatedReview;
-        reviews[reviewID].id = reviewID;
-        res.status(200).json({
+router.put('/:reviewID', async (req, res, next) => {
+  if (validateAgainstSchema(req.body, reviewSchema)) {
+    try {
+      const updateSuccessful = await
+        updateReviewById(parseInt(req.params.id), req.body);
+      if (updateSuccessful) {
+        res.status(200).send({
           links: {
-            review: `/reviews/${reviewID}`,
-            business: `/businesses/${updatedReview.businessid}`
+            review: `/reviews/${reviewID}`
           }
         });
       } else {
-        res.status(403).json({
-          error: "Updated review cannot modify businessid or userid"
-        });
+        next();
       }
-    } else {
-      res.status(400).json({
-        error: "Request body is not a valid review object"
+    } catch (err) {
+      res.status(500).send({
+        error: "Unable to update review."
       });
     }
-
   } else {
-    next();
+    res.status(400).json({
+      error: "Request body does not contain a valid review."
+    });
   }
 });
 
