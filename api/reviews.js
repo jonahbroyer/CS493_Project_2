@@ -144,3 +144,11 @@ router.delete('/:reviewID', async (req, res, next) => {
     });
   }
 });
+
+async function getReviewsByUserId(userid) {
+  const [ results ] = await mysqlPool.query(
+    'SELECT * FROM review WHERE userid = ?',
+    [ userid ],
+  );
+  return results[0];
+}
