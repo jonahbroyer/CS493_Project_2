@@ -1,4 +1,21 @@
 version: '3'
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - MYSQL_DB=yelp
+      - MYSQL_USER=yelp
+      - MYSQL_PASSWORD=yelp
+    ports:
+      - "8000:8000"
+  db:
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_DATABASE=yelp
+      - MYSQL_USER=yelp
+      - MYSQL_PASSWORD=yelp
